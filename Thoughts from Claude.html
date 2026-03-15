@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0f0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>KidneyLog</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0f0d;--sf:#111a15;--sf2:#162019;--sf3:#1c2a20;--bd:#1e2e22;--bd2:#253529;--ac:#4ade80;--ac2:#86efac;--wn:#fbbf24;--wn2:#fde68a;--dn:#f87171;--dn2:#fca5a5;--bl2:#93c5fd;--tx:#e8f5ec;--tx2:#9ab5a0;--tx3:#5a7a61;--tbh:64px;--sab:env(safe-area-inset-bottom,0px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-weight:300}
+.app{display:flex;flex-direction:column;height:100dvh}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--tbh) + var(--sab) + 16px);-webkit-overflow-scrolling:touch}
+/* HEADER */
+.app-header{background:var(--sf);border-bottom:1px solid var(--bd);padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.app-logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--ac) 0%,#22c55e 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:-0.02em}
+.header-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3);letter-spacing:.08em}
+/* TABS */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tbh) + var(--sab));background:var(--sf);border-top:1px solid var(--bd);display:flex;align-items:flex-start;padding-top:8px;z-index:100}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 0}
+.tab-icon{font-size:20px;line-height:1}
+.tab-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--tx3);text-transform:uppercase;transition:color .15s}
+.tab-btn.active .tab-label{color:var(--ac)}
+.tab-btn.active .tab-icon{filter:drop-shadow(0 0 4px rgba(74,222,128,.6))}
+/* PAGES */
+.page{display:none;padding:20px}
+.page.active{display:block}
+/* SECTION HEADS */
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:8px}
+.sh-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);letter-spacing:.1em}
+.sh-t{font-family:'Playfair Display',serif;font-size:18px;font-weight:700}
+.sh-l{flex:1;height:1px;background:var(--bd)}
+/* CARDS */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--tx2);text-transform:uppercase}
+/* TODAY HERO */
+.hero{background:linear-gradient(135deg,var(--sf2) 0%,var(--sf3) 100%);border:1px solid var(--bd2);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(74,222,128,.12) 0%,transparent 70%);pointer-events:none}
+.hero-date{font-family:'Playfair Display',serif;font-size:13px;color:var(--tx3);margin-bottom:4px}
+.hero-greet{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:16px;line-height:1.2}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hstat{background:rgba(0,0,0,.2);border-radius:10px;padding:10px;text-align:center}
+.hstat-v{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ac);line-height:1}
+.hstat-l{font-family:'DM Mono',monospace;font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+/* RING */
+.ring-w{position:relative;width:60px;height:60px;flex-shrink:0}
+.ring-w svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--bd2);stroke-width:5}
+.ring-f{fill:none;stroke:var(--ac);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .4s}
+.ring-t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--ac)}
+/* CHECKLIST */
+.ci{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer;user-select:none}
+.ci:last-child{border-bottom:none}
+.cb{width:20px;height:20px;border:1.5px solid var(--bd2);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:var(--bg)}
+.ci.done .cb{background:var(--ac);border-color:var(--ac)}
+.ci.done .cb::after{content:'✓';font-size:12px;color:#0a0f0d;font-weight:700}
+.cc{flex:1}
+.ct{font-size:13px;color:var(--tx2);line-height:1.4;transition:all .2s}
+.ci.done .ct{color:var(--tx3);text-decoration:line-through;text-decoration-color:var(--tx3)}
+.cn{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);margin-top:3px}
+.cf{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:100px;letter-spacing:.06em;flex-shrink:0;margin-top:2px}
+.fd{background:rgba(74,222,128,.1);color:var(--ac2)}
+.fw{background:rgba(96,165,250,.1);color:var(--bl2)}
+.fm{background:rgba(251,191,36,.1);color:var(--wn2)}
+/* INPUTS */
+.ig{display:flex;flex-direction:column;gap:5px}
+.il{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase}
+input,select{background:var(--bg);border:1px solid var(--bd2);border-radius:8px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none}
+input:focus,select:focus{border-color:var(--ac)}
+input::placeholder{color:var(--tx3)}
+/* BUTTONS */
+.btn{background:var(--ac);color:#0a0f0d;border:none;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.06em;padding:10px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-g{background:transparent;border:1px solid var(--bd2);color:var(--tx3)}
+.btn-d{background:rgba(248,113,113,.15);color:var(--dn2);border:1px solid rgba(248,113,113,.2)}
+.btn-full{width:100%;text-align:center;padding:12px;border-radius:10px;margin-top:8px}
+/* BP */
+.bpr{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.bpe{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.bpe:last-child{border-bottom:none}
+.bpv{font-family:'DM Mono',monospace;font-size:14px;color:var(--ac)}
+.bpt{font-size:11px;color:var(--tx3)}
+.bps{font-size:10px;padding:2px 8px;border-radius:100px}
+.bp-ok{background:rgba(74,222,128,.1);color:var(--ac2)}
+.bp-w{background:rgba(251,191,36,.1);color:var(--wn2)}
+.bp-h{background:rgba(248,113,113,.1);color:var(--dn2)}
+/* LAB TILES */
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.lt{background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.ltn{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.ltv{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1;margin-bottom:4px}
+.ltu{font-size:11px;color:var(--tx3)}
+.ltt{font-size:11px;margin-top:6px}
+.tu{color:var(--dn)}.td{color:var(--ac)}.tgu{color:var(--ac)}
+.vn{color:var(--ac2)}.vw{color:var(--wn)}.vd{color:var(--dn)}
+/* LAB FORM */
+.lf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.lf .full{grid-column:span 2}
+/* CHART */
+.cw{position:relative;height:200px;margin-top:8px}
+/* TREND PILLS */
+.tsel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tpill{font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border-radius:100px;border:1px solid var(--bd2);color:var(--tx3);cursor:pointer;transition:all .2s;letter-spacing:.05em}
+.tpill.active{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.3);color:var(--ac2)}
+/* INSIGHT */
+.ins{background:var(--sf2);border-left:3px solid var(--ac);border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:10px;font-size:13px;color:var(--tx2);line-height:1.6}
+.ins.w{border-left-color:var(--wn)}
+/* HISTORY */
+.he{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.he:last-child{border-bottom:none}
+/* STREAK */
+.skr{display:flex;gap:10px;margin-bottom:16px}
+.skb{flex:1;background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:14px;text-align:center}
+.skv{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--ac);line-height:1;margin-bottom:4px}
+.skl{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase}
+/* CALENDAR */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cdn{font-family:'DM Mono',monospace;font-size:9px;color:var(--tx3);text-align:center;padding:4px 0;letter-spacing:.06em}
+.cd{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--tx3);cursor:pointer;transition:all .15s}
+.cd.today{border:1px solid var(--ac);color:var(--ac)}
+.cd.done{background:rgba(74,222,128,.15);color:var(--ac2)}
+.cd.partial{background:rgba(251,191,36,.1);color:var(--wn2)}
+/* MONTH NAV */
+.mnav{background:none;border:1px solid var(--bd2);color:var(--tx2);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+/* PROFILE */
+.ptile{display:flex;align-items:center;gap:16px;padding:18px;background:var(--sf2);border-radius:12px;margin-bottom:14px}
+.pav{width:52px;height:52px;background:linear-gradient(135deg,rgba(74,222,128,.2) 0%,rgba(34,197,94,.1) 100%);border:1px solid rgba(74,222,128,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pnm{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.pdt{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3);letter-spacing:.06em}
+/* SETTING ROW */
+.sr{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--bd)}
+.sr:last-child{border-bottom:none}
+.sl{font-size:14px;color:var(--tx2)}
+.ss{font-size:12px;color:var(--tx3);margin-top:2px}
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--tbh) + var(--sab) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf3);border:1px solid var(--bd2);color:var(--tx);font-size:13px;padding:10px 20px;border-radius:100px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:10px}
+.sm{font-size:12px}.mono{font-family:'DM Mono',monospace}.tmuted{color:var(--tx3)}.tac{color:var(--ac)}.mt14{margin-top:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="app-header">
+    <div class="app-logo">
+      <div class="logo-mark">🫘</div>
+      <div class="logo-text">KidneyLog</div>
+    </div>
+    <div class="header-date" id="hDate"></div>
+  </div>
+
+  <div class="screen" id="scr">
+
+    <!-- TODAY -->
+    <div class="page active" id="page-today">
+      <div class="hero">
+        <div class="hero-date" id="heroDate"></div>
+        <div class="hero-greet" id="heroGreet">Good morning</div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hstat-v" id="sWt">97</div><div class="hstat-l">kg</div></div>
+          <div class="hstat"><div class="hstat-v" id="sBMI">—</div><div class="hstat-l">BMI</div></div>
+          <div class="hstat"><div class="hstat-v" id="sStr">—</div><div class="hstat-l">Streak</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">💊 Daily Tasks</div>
+          <div class="ring-w">
+            <svg viewBox="0 0 60 60" width="60" height="60">
+              <circle class="ring-bg" cx="30" cy="30" r="25"/>
+              <circle class="ring-f" id="dailyRing" cx="30" cy="30" r="25" stroke-dasharray="157" stroke-dashoffset="157"/>
+            </svg>
+            <div class="ring-t" id="dailyPct">0%</div>
+          </div>
+        </div>
+        <div id="dailyList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">📅 Weekly Tasks</div></div>
+        <div id="weeklyList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title mt14" style="margin-bottom:14px">🩺 Blood Pressure</div>
+        <div class="bpr">
+          <div class="ig"><div class="il">Systolic</div><input type="number" id="bpS" placeholder="120" min="60" max="220"></div>
+          <div class="ig"><div class="il">Diastolic</div><input type="number" id="bpD" placeholder="80" min="40" max="140"></div>
+          <button class="btn" onclick="logBP()">Log</button>
+        </div>
+        <div id="bpHist" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">⚖️ Weight</div>
+        <div class="bpr">
+          <div class="ig" style="grid-column:span 2"><div class="il">Weight (kg)</div><input type="number" id="wtIn" placeholder="97.0" step="0.1"></div>
+          <button class="btn" onclick="logWeight()">Log</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LABS -->
+    <div class="page" id="page-labs">
+      <div class="sh"><span class="sh-n">01</span><span class="sh-t">Latest Results</span><div class="sh-l"></div></div>
+      <div class="lg" id="labTiles"></div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">➕ Add Lab Results</div>
+        <div class="lf">
+          <div class="ig full"><div class="il">Date of Test</div><input type="date" id="labDate"></div>
+          <div class="ig"><div class="il">Cystatin C (mg/dL)</div><input type="number" id="lCC" placeholder="1.62" step="0.01"></div>
+          <div class="ig"><div class="il">eGFR</div><input type="number" id="lEG" placeholder="69"></div>
+          <div class="ig"><div class="il">Creatinine (mg/dL)</div><input type="number" id="lCR" placeholder="1.38" step="0.01"></div>
+          <div class="ig"><div class="il">BUN (mg/dL)</div><input type="number" id="lBU" placeholder="26.9" step="0.1"></div>
+          <div class="ig"><div class="il">Urea (mg/dL)</div><input type="number" id="lUR" placeholder="57.57" step="0.01"></div>
+          <div class="ig"><div class="il">Phosphorus (mg/dL)</div><input type="number" id="lPH" placeholder="4.55" step="0.01"></div>
+          <div class="ig"><div class="il">Albumin (g/dL)</div><input type="number" id="lAL" placeholder="4.3" step="0.01"></div>
+          <div class="ig"><div class="il">Uric Acid (mg/dL)</div><input type="number" id="lUA" placeholder="3.13" step="0.01"></div>
+          <div class="ig"><div class="il">HbA1c (%)</div><input type="number" id="lHA" placeholder="4.6" step="0.1"></div>
+          <div class="ig"><div class="il">HOMA-IR</div><input type="number" id="lHR" placeholder="0.32" step="0.01"></div>
+          <div class="ig"><div class="il">Fasting Insulin</div><input type="number" id="lIN" placeholder="2.1" step="0.1"></div>
+          <div class="ig"><div class="il">Calcium (mg/dL)</div><input type="number" id="lCA" placeholder="9.28" step="0.01"></div>
+        </div>
+        <button class="btn btn-full" onclick="saveLabs()">Save Lab Results</button>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">📋 Lab History</div>
+        <div id="labHist"></div>
+      </div>
+    </div>
+
+    <!-- TRENDS -->
+    <div class="page" id="page-trends">
+      <div class="sh"><span class="sh-n">02</span><span class="sh-t">Trends</span><div class="sh-l"></div></div>
+      <div class="tsel">
+        <div class="tpill active" data-m="cystatinC" onclick="selTrend(this)">Cystatin C</div>
+        <div class="tpill" data-m="egfr" onclick="selTrend(this)">eGFR</div>
+        <div class="tpill" data-m="creatinine" onclick="selTrend(this)">Creatinine</div>
+        <div class="tpill" data-m="bun" onclick="selTrend(this)">BUN</div>
+        <div class="tpill" data-m="phosphorus" onclick="selTrend(this)">Phosphorus</div>
+        <div class="tpill" data-m="weight" onclick="selTrend(this)">Weight</div>
+        <div class="tpill" data-m="hba1c" onclick="selTrend(this)">HbA1c</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title" id="tTitle">Cystatin C</div>
+          <div class="mono sm tmuted" id="tUnit">mg/dL</div>
+        </div>
+        <div class="cw"><canvas id="tChart"></canvas></div>
+      </div>
+      <div class="sh"><span class="sh-n">03</span><span class="sh-t">Insights</span><div class="sh-l"></div></div>
+      <div id="insPanel"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <div class="sh"><span class="sh-n">04</span><span class="sh-t">Adherence</span><div class="sh-l"></div></div>
+      <div class="skr">
+        <div class="skb"><div class="skv" id="curStr">0</div><div class="skl">Streak</div></div>
+        <div class="skb"><div class="skv" id="bstStr">0</div><div class="skl">Best</div></div>
+        <div class="skb"><div class="skv" id="totDays">0</div><div class="skl">Days</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📆 Monthly View</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="mnav" onclick="chMo(-1)">&#8249;</button>
+            <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700" id="calLbl"></div>
+            <button class="mnav" onclick="chMo(1)">&#8250;</button>
+          </div>
+        </div>
+        <div class="cg" id="calGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">🗓️ Monthly Monitoring</div>
+        <div id="moList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="ptile">
+        <div class="pav">🧑</div>
+        <div><div class="pnm">Patient Profile</div><div class="pdt" id="pDet">Age 34 · Male · 168cm</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">⚙️ Settings</div>
+        <div class="lf">
+          <div class="ig"><div class="il">Age</div><input type="number" id="sAge" placeholder="34"></div>
+          <div class="ig"><div class="il">Height (cm)</div><input type="number" id="sHt" placeholder="168"></div>
+          <div class="ig"><div class="il">Target Weight (kg)</div><input type="number" id="sTW" placeholder="83" step="0.5"></div>
+          <div class="ig"><div class="il">Protein (g/kg/day)</div><input type="number" id="sPr" placeholder="0.6" step="0.1"></div>
+        </div>
+        <button class="btn btn-full" onclick="savePro()">Save Profile</button>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">💾 Data</div>
+        <div class="sr"><div><div class="sl">Export Backup</div><div class="ss">Download JSON to device</div></div><button class="btn btn-g" onclick="expData()">Export</button></div>
+        <div class="sr"><div><div class="sl">Import Backup</div><div class="ss">Restore from JSON</div></div><button class="btn btn-g" onclick="document.getElementById('impF').click()">Import</button></div>
+        <input type="file" id="impF" accept=".json" style="display:none" onchange="impData(event)">
+        <div class="sr"><div><div class="sl">Reset Today</div><div class="ss">Clear today's checklist</div></div><button class="btn btn-d" onclick="resetDay()">Reset</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">ℹ️ About</div>
+        <div class="sm tmuted" style="line-height:1.8">KidneyLog v1.0 · Personal CKD monitoring<br>Data stored locally — no cloud, no account<br><strong style="color:var(--tx2)">Install:</strong> Browser menu → Add to Home Screen<br>Always follow your nephrologist's guidance.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="goPage('today',this)"><span class="tab-icon">🏠</span><span class="tab-label">Today</span></button>
+    <button class="tab-btn" onclick="goPage('labs',this)"><span class="tab-icon">🧪</span><span class="tab-label">Labs</span></button>
+    <button class="tab-btn" onclick="goPage('trends',this)"><span class="tab-icon">📈</span><span class="tab-label">Trends</span></button>
+    <button class="tab-btn" onclick="goPage('history',this)"><span class="tab-icon">📅</span><span class="tab-label">History</span></button>
+    <button class="tab-btn" onclick="goPage('settings',this)"><span class="tab-icon">⚙️</span><span class="tab-label">Settings</span></button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DB ──
+let db;
+function iDB(){return new Promise((ok,er)=>{const r=indexedDB.open('KidneyLog',3);r.onupgradeneeded=e=>{const d=e.target.result;['labs','bp','weight','checklist','profile'].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:['checklist','profile'].includes(s)?s==='profile'?'id':'dateKey':'id',autoIncrement:!['checklist','profile'].includes(s)})})};r.onsuccess=e=>{db=e.target.result;ok()};r.onerror=er})}
+function dPut(s,d){return new Promise((ok,er)=>{const t=db.transaction(s,'readwrite');const r=t.objectStore(s).put(d);r.onsuccess=()=>ok(r.result);r.onerror=er})}
+function dAll(s){return new Promise((ok,er)=>{const t=db.transaction(s,'readonly');const r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=er})}
+function dGet(s,k){return new Promise((ok,er)=>{const t=db.transaction(s,'readonly');const r=t.objectStore(s).get(k);r.onsuccess=()=>ok(r.result);r.onerror=er})}
+
+// ── PROFILE ──
+let prof={id:1,age:34,height:168,targetWt:83,prot:0.6};
+let curWt=97;let tChart=null;let calDt=new Date();
+
+async function loadPro(){const p=await dGet('profile',1);if(p)prof=p;document.getElementById('sAge').value=prof.age||34;document.getElementById('sHt').value=prof.height||168;document.getElementById('sTW').value=prof.targetWt||83;document.getElementById('sPr').value=prof.prot||0.6;updPro()}
+async function savePro(){prof.age=+document.getElementById('sAge').value||34;prof.height=+document.getElementById('sHt').value||168;prof.targetWt=+document.getElementById('sTW').value||83;prof.prot=+document.getElementById('sPr').value||0.6;await dPut('profile',prof);updPro();toast('Profile saved ✓')}
+function updPro(){document.getElementById('pDet').textContent=`Age ${prof.age} · Male · ${prof.height}cm`;const b=curWt/((prof.height/100)**2);document.getElementById('sBMI').textContent=b.toFixed(1)}
+
+// ── TASKS ──
+const DAILY=[
+  {id:'d1',t:'Dapagliflozin + Metformin',n:'With or after breakfast',f:'d'},
+  {id:'d9',t:'Morning medication',n:'Take all morning medications',f:'d'},
+  {id:'d10',t:'Afternoon medication',n:'Take all afternoon medications',f:'d'},
+  {id:'d11',t:'Night medication',n:'Take all night medications',f:'d'},
+  {id:'d2',t:'Antihypertensive medication',n:'Same time every day',f:'d'},
+  {id:'d12',t:'Check BP today',n:'Log reading below — target <130/80',f:'d'},
+  {id:'d3',t:'No NSAIDs today',n:'Paracetamol only if needed',f:'d'},
+  {id:'d4',t:'Protein within daily target',n:'0.6g × body weight in kg',f:'d'},
+  {id:'d5',t:'Avoid processed foods & cola',n:'Hidden phosphate additives',f:'d'},
+  {id:'d6',t:'Adequate water — pale urine',n:'Dapagli increases fluid loss',f:'d'},
+  {id:'d7',t:'30 min moderate activity',n:'Walk, cycle or swim',f:'d'},
+  {id:'d8',t:'7–8 hours sleep tonight',n:'Sleep deprivation raises BP',f:'d'},
+];
+const WEEKLY=[
+  {id:'w1',t:'Review BP log for the week',n:'Flag readings above 140/90',f:'w'},
+  {id:'w2',t:'Meal plan — phosphorus aware',n:'Watch dairy & nut intake',f:'w'},
+  {id:'w3',t:'Log current weight',n:'Track progress toward target',f:'w'},
+];
+const MONTHLY=[
+  {id:'m1',t:'Monthly lab tests',n:'CysC, eGFR, BUN, Cr, Phosphorus',f:'m'},
+  {id:'m2',t:'Enter results in KidneyLog',n:'Track trends over time',f:'m'},
+  {id:'m3',t:'Nephrologist appointment',n:'Share lab trends and symptoms',f:'m'},
+  {id:'m4',t:'PTH check (quarterly)',n:'Monitor hyperparathyroidism',f:'m'},
+];
+
+function dk(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function wk(){const d=new Date();const dd=d.getDay();const diff=d.getDate()-dd+(dd===0?-6:1);const m=new Date(new Date().setDate(diff));return`w-${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}-${String(m.getDate()).padStart(2,'0')}`}
+function mk(){const d=new Date();return`mo-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+
+let chk={};
+async function loadChk(){const a=await dAll('checklist');chk={};a.forEach(r=>{chk[r.dateKey]=new Set(r.done||[])})}
+async function saveChk(k){await dPut('checklist',{dateKey:k,done:Array.from(chk[k]||[])})}
+
+async function togTask(id,k,lid,rid,pid){
+  if(!chk[k])chk[k]=new Set();
+  if(chk[k].has(id))chk[k].delete(id);else chk[k].add(id);
+  await saveChk(k);rendList(lid,k,rid,pid);updStreak();
+}
+
+function rendList(cid,k,rid,pid){
+  const tasks=cid==='dailyList'?DAILY:cid==='weeklyList'?WEEKLY:MONTHLY;
+  const done=chk[k]||new Set();
+  const el=document.getElementById(cid);el.innerHTML='';
+  tasks.forEach(t=>{
+    const ok=done.has(t.id);const d=document.createElement('div');d.className=`ci${ok?' done':''}`;
+    d.innerHTML=`<div class="cb"></div><div class="cc"><div class="ct">${t.t}</div><div class="cn">${t.n}</div></div><span class="cf f${t.f}">${t.f==='d'?'Daily':t.f==='w'?'Weekly':'Monthly'}</span>`;
+    d.onclick=()=>togTask(t.id,k,cid,rid,pid);el.appendChild(d);
+  });
+  if(rid)updRing(rid,pid,done.size,tasks.length);
+}
+
+function updRing(rid,pid,done,tot){const p=tot?done/tot:0;const r=document.getElementById(rid);if(r)r.style.strokeDashoffset=157-(157*p);const e=document.getElementById(pid);if(e)e.textContent=Math.round(p*100)+'%'}
+async function resetDay(){const k=dk();chk[k]=new Set();await saveChk(k);rendList('dailyList',k,'dailyRing','dailyPct');toast('Today reset ✓')}
+
+// ── BP ──
+async function logBP(){const s=+document.getElementById('bpS').value;const d=+document.getElementById('bpD').value;if(!s||!d){toast('Enter both values');return}await dPut('bp',{sys:s,dia:d,ts:Date.now()});document.getElementById('bpS').value='';document.getElementById('bpD').value='';rendBP();toast(`BP ${s}/${d} logged ✓`)}
+async function rendBP(){const a=(await dAll('bp')).sort((a,b)=>b.ts-a.ts).slice(0,5);const el=document.getElementById('bpHist');if(!a.length){el.innerHTML='<div class="sm tmuted">No readings yet</div>';return}el.innerHTML=a.map(r=>{const s=r.sys<130&&r.dia<80?['bp-ok','Target ✓']:r.sys<140?['bp-w','Border']:['bp-h','High'];const d=new Date(r.ts);return`<div class="bpe"><div class="bpv">${r.sys}/${r.dia}</div><div class="bpt">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div><span class="bps ${s[0]}">${s[1]}</span></div>`}).join('')}
+
+// ── WEIGHT ──
+async function logWeight(){const w=+document.getElementById('wtIn').value;if(!w){toast('Enter weight');return}curWt=w;await dPut('weight',{w,ts:Date.now()});document.getElementById('wtIn').value='';document.getElementById('sWt').textContent=w;updPro();toast(`${w}kg logged ✓`)}
+async function loadWt(){const a=await dAll('weight');if(a.length){a.sort((a,b)=>b.ts-a.ts);curWt=a[0].w;document.getElementById('sWt').textContent=curWt}updPro()}
+
+// ── LABS ──
+const LC=[
+  {k:'cystatinC',l:'Cystatin C',u:'mg/dL',hi:1.0,gd:'down',r:'<1.0'},
+  {k:'egfr',l:'eGFR',u:'mL/min',lo:60,gd:'up',r:'>60'},
+  {k:'creatinine',l:'Creatinine',u:'mg/dL',hi:1.17,gd:'down',r:'0.67–1.17'},
+  {k:'bun',l:'BUN',u:'mg/dL',hi:20.1,gd:'down',r:'7.9–20.1'},
+  {k:'phosphorus',l:'Phosphorus',u:'mg/dL',hi:4.5,gd:'down',r:'2.6–4.5'},
+  {k:'albumin',l:'Albumin',u:'g/dL',lo:3.5,hi:5.0,gd:'stable',r:'3.5–5.0'},
+  {k:'hba1c',l:'HbA1c',u:'%',hi:5.7,gd:'down',r:'<5.7'},
+  {k:'homaIR',l:'HOMA-IR',u:'',hi:2.0,gd:'down',r:'<1.0 ideal'},
+];
+const LF={lCC:'cystatinC',lEG:'egfr',lCR:'creatinine',lBU:'bun',lUR:'urea',lPH:'phosphorus',lAL:'albumin',lUA:'uricAcid',lHA:'hba1c',lHR:'homaIR',lIN:'insulin',lCA:'calcium'};
+
+async function saveLabs(){
+  const dv=document.getElementById('labDate').value;if(!dv){toast('Select a date');return}
+  const e={date:dv,ts:new Date(dv).getTime()};
+  Object.entries(LF).forEach(([id,k])=>{const v=parseFloat(document.getElementById(id).value);e[k]=isNaN(v)?null:v});
+  await dPut('labs',e);Object.keys(LF).forEach(id=>document.getElementById(id).value='');
+  toast('Lab results saved ✓');rendLabTiles();rendLabHist();
+}
+
+async function rendLabTiles(){
+  const a=(await dAll('labs')).sort((a,b)=>b.ts-a.ts);const lat=a[0];const prv=a[1];const el=document.getElementById('labTiles');
+  if(!lat){el.innerHTML='<div class="sm tmuted">No results yet. Add below.</div>';return}
+  el.innerHTML=LC.map(c=>{
+    const v=lat[c.k];if(v===null||v===undefined)return'';
+    let vc='vn';if(c.hi&&v>c.hi)vc=c.gd==='up'?'vd':'vw';if(c.lo&&v<c.lo)vc='vw';
+    let tr='';
+    if(prv&&prv[c.k]!=null){const df=v-prv[c.k];const up=df>0;const gu=c.gd==='up';const tc=up?(gu?'tgu':'tu'):'td';tr=`<div class="ltt ${tc}">${up?'↑':'↓'} ${Math.abs(df).toFixed(2)} from last</div>`}
+    return`<div class="lt"><div class="ltn">${c.l}</div><div class="ltv ${vc}">${v}</div><div class="ltu">${c.u}${c.r?' · ref '+c.r:''}</div>${tr}</div>`;
+  }).filter(Boolean).join('');
+}
+
+async function rendLabHist(){
+  const a=(await dAll('labs')).sort((a,b)=>b.ts-a.ts);const el=document.getElementById('labHist');
+  if(!a.length){el.innerHTML='<div class="sm tmuted">No entries yet</div>';return}
+  el.innerHTML=a.slice(0,8).map(r=>{const d=new Date(r.date);const ic=r.cystatinC?(r.cystatinC<1.5?'✅':r.cystatinC<2.0?'⚠️':'🔴'):'';return`<div class="he"><div><div class="sm" style="color:var(--tx2)">${d.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div><div class="mono sm tmuted">eGFR ${r.egfr||'—'} · CysC ${r.cystatinC||'—'} · Cr ${r.creatinine||'—'}</div></div><div>${ic}</div></div>`}).join('');
+}
+
+// ── TRENDS ──
+let selM='cystatinC';
+const MM={cystatinC:{l:'Cystatin C',u:'mg/dL',ref:1.0,c:'#4ade80'},egfr:{l:'eGFR',u:'mL/min',ref:60,c:'#60a5fa'},creatinine:{l:'Creatinine',u:'mg/dL',ref:1.17,c:'#f59e0b'},bun:{l:'BUN',u:'mg/dL',ref:20.1,c:'#f87171'},phosphorus:{l:'Phosphorus',u:'mg/dL',ref:4.5,c:'#a78bfa'},weight:{l:'Weight',u:'kg',ref:83,c:'#34d399'},hba1c:{l:'HbA1c',u:'%',ref:5.7,c:'#fb923c'}};
+
+function selTrend(el){document.querySelectorAll('.tpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');selM=el.dataset.m;rendTrend()}
+
+async function rendTrend(){
+  const m=MM[selM];document.getElementById('tTitle').textContent=m.l;document.getElementById('tUnit').textContent=m.u;
+  let pts=[];
+  if(selM==='weight'){const a=(await dAll('weight')).sort((a,b)=>a.ts-b.ts);pts=a.map(r=>({x:new Date(r.ts).toLocaleDateString('en-IN',{day:'numeric',month:'short'}),y:r.w}));if(!pts.length)pts=[{x:'Dec 24',y:117},{x:'Jan 25',y:110},{x:'Feb 25',y:104},{x:'Mar 25',y:97}]}
+  else{const a=(await dAll('labs')).sort((a,b)=>a.ts-b.ts);pts=a.filter(r=>r[selM]!=null).map(r=>({x:new Date(r.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}),y:r[selM]}))}
+  const ctx=document.getElementById('tChart').getContext('2d');
+  if(tChart)tChart.destroy();
+  if(!pts.length){document.getElementById('tChart').parentElement.innerHTML='<canvas id="tChart"></canvas><div class="sm tmuted" style="text-align:center;padding:60px 0">No data yet</div>';return}
+  tChart=new Chart(ctx,{type:'line',data:{labels:pts.map(p=>p.x),datasets:[{label:m.l,data:pts.map(p=>p.y),borderColor:m.c,backgroundColor:m.c+'18',borderWidth:2.5,pointBackgroundColor:m.c,pointRadius:5,tension:0.3,fill:true},{label:'Ref',data:pts.map(()=>m.ref),borderColor:'rgba(255,255,255,0.15)',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c2a20',borderColor:'#253529',borderWidth:1,titleColor:'#9ab5a0',bodyColor:'#e8f5ec'}},scales:{x:{grid:{color:'#1e2e22'},ticks:{color:'#5a7a61',font:{family:'DM Mono',size:10}}},y:{grid:{color:'#1e2e22'},ticks:{color:'#5a7a61',font:{family:'DM Mono',size:10}}}}}});
+}
+
+async function rendIns(){
+  const a=(await dAll('labs')).sort((a,b)=>b.ts-a.ts);const lat=a[0];const prv=a[1];const el=document.getElementById('insPanel');const ins=[];
+  if(!lat){el.innerHTML='<div class="ins">Add your first lab results to see personalised insights.</div>';return}
+  if(lat.cystatinC&&prv&&prv.cystatinC){const d=lat.cystatinC-prv.cystatinC;if(d<0)ins.push({c:'',m:`Cystatin C improved ${prv.cystatinC} → ${lat.cystatinC} mg/dL. Kidneys responding well to treatment.`});else if(d>0.1)ins.push({c:'w',m:`Cystatin C increased ${prv.cystatinC} → ${lat.cystatinC}. Discuss with nephrologist.`});else ins.push({c:'',m:`Cystatin C stable at ${lat.cystatinC} mg/dL. Maintain current regimen.`})}
+  if(lat.egfr){if(lat.egfr>=60)ins.push({c:'',m:`eGFR ${lat.egfr} — entering Stage 2 territory. Significant improvement.`});else if(lat.egfr>=45)ins.push({c:'',m:`eGFR ${lat.egfr} — Stage 3a. Trending positively.`});else ins.push({c:'w',m:`eGFR ${lat.egfr} — Stage 3b. Continue current regimen.`})}
+  if(lat.phosphorus&&lat.phosphorus>4.5)ins.push({c:'w',m:`Phosphorus ${lat.phosphorus} mg/dL above target. Review dairy and processed food intake.`});
+  if(lat.hba1c&&lat.hba1c<5.0)ins.push({c:'',m:`HbA1c ${lat.hba1c}% excellent — glucose metabolism very well controlled.`});
+  if(lat.albumin&&lat.albumin>=3.5&&lat.albumin<=5.0)ins.push({c:'',m:`Albumin ${lat.albumin} g/dL normal — protein restriction not causing malnutrition. Good.`});
+  if(lat.homaIR&&lat.homaIR<1.0)ins.push({c:'',m:`HOMA-IR ${lat.homaIR} exceptional — insulin sensitivity is protecting the kidneys.`});
+  if(!ins.length)ins.push({c:'',m:'All tracked values within expected range.'});
+  el.innerHTML=ins.map(i=>`<div class="ins ${i.c}">${i.m}</div>`).join('');
+}
+
+// ── CALENDAR ──
+async function rendCal(){
+  const yr=calDt.getFullYear();const mo=calDt.getMonth();
+  document.getElementById('calLbl').textContent=new Date(yr,mo,1).toLocaleDateString('en-IN',{month:'short',year:'numeric'});
+  const first=new Date(yr,mo,1).getDay();const days=new Date(yr,mo+1,0).getDate();const ts=dk();
+  const g=document.getElementById('calGrid');let h=['M','T','W','T','F','S','S'].map(d=>`<div class="cdn">${d}</div>`).join('');
+  const off=first===0?6:first-1;for(let i=0;i<off;i++)h+='<div></div>';
+  for(let d=1;d<=days;d++){const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const it=ds===ts;const done=chk[ds];const p=done?done.size/DAILY.length:0;const c=it?'today':p>=1?'done':p>0?'partial':'';h+=`<div class="cd ${c}">${d}</div>`}
+  g.innerHTML=h;
+}
+function chMo(d){calDt=new Date(calDt.getFullYear(),calDt.getMonth()+d,1);rendCal()}
+
+async function updStreak(){
+  const a=await dAll('checklist');const lg=new Set(a.filter(r=>r.done&&r.done.length>0).map(r=>r.dateKey).filter(k=>!k.startsWith('w-')&&!k.startsWith('mo-')));
+  let s=0;const d=new Date();
+  for(let i=0;i<365;i++){const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(lg.has(k)){s++;d.setDate(d.getDate()-1)}else break}
+  let best=0;let run=0;const sorted=[...lg].sort();
+  for(let i=0;i<sorted.length;i++){if(i===0){run=1}else{const p=new Date(sorted[i-1]);const c=new Date(sorted[i]);run=(c-p)/86400000===1?run+1:1}best=Math.max(best,run)}
+  document.getElementById('curStr').textContent=s;document.getElementById('bstStr').textContent=best;document.getElementById('totDays').textContent=lg.size;document.getElementById('sStr').textContent=s;
+}
+
+// ── EXPORT/IMPORT ──
+async function expData(){const[l,b,w,c]=await Promise.all([dAll('labs'),dAll('bp'),dAll('weight'),dAll('checklist')]);const data={version:1,exported:new Date().toISOString(),profile:prof,labs:l,bp:b,weight:w,checklist:c};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=`kidneylog-${dk()}.json`;a.click();toast('Exported ✓')}
+async function impData(e){const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(data.profile)await dPut('profile',data.profile);for(const r of(data.labs||[]))await dPut('labs',r);for(const r of(data.bp||[]))await dPut('bp',r);for(const r of(data.weight||[]))await dPut('weight',r);for(const r of(data.checklist||[]))await dPut('checklist',r);toast('Imported ✓');await init()}catch{toast('Import failed')}}
+
+// ── NAV ──
+function goPage(n,b){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');b.classList.add('active');document.getElementById('scr').scrollTop=0;if(n==='trends'){rendTrend();rendIns()}if(n==='history'){rendCal();rendList('moList',mk(),null,null);updStreak()}if(n==='labs'){rendLabTiles();rendLabHist()}}
+
+// ── TOAST ──
+let tT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2500)}
+
+// ── HEADER ──
+function updHeader(){const n=new Date();document.getElementById('hDate').textContent=n.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();document.getElementById('heroDate').textContent=n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});const h=n.getHours();document.getElementById('heroGreet').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening'}
+
+// ── SEED ──
+async function seed(){const ex=await dAll('labs');if(ex.length)return;await dPut('labs',{date:'2024-12-15',ts:new Date('2024-12-15').getTime(),cystatinC:2.2,egfr:50,creatinine:null,bun:null,urea:null,phosphorus:null,albumin:null,uricAcid:null,hba1c:null,homaIR:null,insulin:null,calcium:null});await dPut('labs',{date:'2025-03-15',ts:new Date('2025-03-15').getTime(),cystatinC:1.62,egfr:69,creatinine:1.38,bun:26.9,urea:57.57,phosphorus:4.55,albumin:4.3,uricAcid:3.13,hba1c:4.6,homaIR:0.32,insulin:2.1,calcium:9.28});await dPut('weight',{w:117,ts:new Date('2024-12-15').getTime()});await dPut('weight',{w:97,ts:new Date('2025-03-15').getTime()})}
+
+// ── INIT ──
+async function init(){await iDB();await loadPro();await loadWt();await loadChk();await seed();updHeader();rendList('dailyList',dk(),'dailyRing','dailyPct');rendList('weeklyList',wk(),null,null);rendBP();rendLabTiles();rendLabHist();updStreak();rendCal();document.getElementById('labDate').value=dk()}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+init();
+</script>
+</body>
+</html>
